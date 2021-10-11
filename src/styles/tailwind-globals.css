@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 @tailwind base;
 
 @layer base {
@@ -10,7 +13,7 @@
   textarea,
   select,
   button {
-    @apply font-roboto;
+    @apply font-primary;
   }
 
   h1 {
