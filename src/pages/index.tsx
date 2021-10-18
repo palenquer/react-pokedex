@@ -99,7 +99,7 @@ export default function Home() {
             <ReactLoading type="bubbles" color="#ffffff" />
           </div>
         ) : (
-          <div className="md:grid grid-cols-5 grid-rows-2 md:gap-4 mt-4 md:mt-0 w-60 md:w-auto flex flex-col gap-8 h-96">
+          <div className="md:grid grid-cols-5 grid-rows-2 md:gap-4 mt-4 md:mt-0 w-60 md:w-auto flex flex-col gap-8 md:h-96">
             {pokemonList.map((item) => {
               return (
                 <PokeBox

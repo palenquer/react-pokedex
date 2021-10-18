@@ -4,7 +4,7 @@ import { MdCatchingPokemon } from "react-icons/md";
 export default function PokeBox({ id, name, sprite, types }) {
   return (
     <button
-      className="flex flex-col items-center bg-gray-700 p-4 rounded-lg hover:bg-gray-600 transition relative md:w-60 w-full"
+      className="flex flex-col items-center bg-gray-700 p-4 rounded-lg hover:bg-gray-600 transition relative xl:w-60 w-full"
     >
       <div className="flex items-center gap-1">
         <span className="text-2xl">
