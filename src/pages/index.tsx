@@ -33,6 +33,7 @@ export default function Home() {
   const [pokemonAPI, setPokemonAPI] = useState<PokeList>();
   const [pokemonList, setPokemonList] = useState<pokemonList[]>([]);
   const [pokeLoading, setPokeLoading] = useState(false);
+  const [toggleButton, setToggleButton] = useState(false);
 
   useEffect(() => {
     GetURL("https://pokeapi.co/api/v2/pokemon/?offset=0&limit=10");
@@ -62,6 +63,7 @@ export default function Home() {
               }
 
               setPokeLoading(false);
+              setToggleButton(false);
             })
           )
           .catch((err) => {
@@ -74,10 +76,12 @@ export default function Home() {
   }
 
   function NextURL() {
+    setToggleButton(true);
     GetURL(pokemonAPI.next);
   }
 
   function PreviousURL() {
+    setToggleButton(true);
     GetURL(pokemonAPI.previous);
   }
 
@@ -112,7 +116,10 @@ export default function Home() {
 
         <div className="flex gap-8 items-center">
           <button
-            disabled={pokemonAPI && pokemonAPI.previous === null}
+            disabled={
+              (pokemonAPI && pokemonAPI.previous === null) ||
+              toggleButton === true
+            }
             className="bg-red-500 w-24 h-12 text-xl rounded-md hover:bg-red-800 transition disabled:bg-gray-700 disabled:cursor-not-allowed"
             onClick={PreviousURL}
           >
@@ -120,7 +127,9 @@ export default function Home() {
           </button>
 
           <button
-            disabled={pokemonAPI && pokemonAPI.next === null}
+            disabled={
+              (pokemonAPI && pokemonAPI.next === null) || toggleButton === true
+            }
             className="bg-green-500 w-24 h-12 text-xl rounded-md hover:bg-green-800 transition disabled:bg-gray-700 disabled:cursor-not-allowed"
             onClick={NextURL}
           >
