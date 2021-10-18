@@ -1,23 +1,18 @@
 import Head from "next/head";
-import { GetStaticProps } from "next";
-import { MdCatchingPokemon } from "react-icons/md";
+import ReactLoading from "react-loading";
 import { useEffect, useState } from "react";
 import axios from "axios";
-
-interface HomeProps {
-  pokeList: PokeList;
-}
-
+import PokeBox from "../components/PokeBox";
 interface PokeList {
   count: number;
-  next: URL;
-  previous?: URL;
+  next: string | null;
+  previous: string | null;
   results: [Results];
 }
 
 interface Results {
   name: string;
-  url: URL;
+  url: string;
 }
 
 interface pokemonTypes {
@@ -34,34 +29,56 @@ interface pokemonList {
   types: pokemonTypes[];
 }
 
-export default function Home({ pokeList }: HomeProps) {
-  const [pokemonURL, setPokemonURL] = useState([]);
+export default function Home() {
+  const [pokemonAPI, setPokemonAPI] = useState<PokeList>();
   const [pokemonList, setPokemonList] = useState<pokemonList[]>([]);
+  const [pokeLoading, setPokeLoading] = useState(false);
 
   useEffect(() => {
-    setPokemonURL(pokeList.results);
+    GetURL("https://pokeapi.co/api/v2/pokemon/?offset=0&limit=10");
+  }, []);
 
-    getURL();
-  }, [pokemonURL]);
+  async function GetURL(url: string) {
+    await axios
+      .get<PokeList>(url)
+      .then((response) => {
+        setPokemonAPI(response.data);
 
-  function getURL() {
-    const getUrl = pokemonURL.map(async (item) => await axios(item.url));
+        setPokeLoading(true);
 
-    setPokemonList([]);
+        const getUrl = response.data.results.map(
+          async (item) => await axios.get<Results>(item.url)
+        );
 
-    Promise.allSettled(getUrl)
-      .then((responses) =>
-        responses.forEach((result) => {
-          if (result.status === "fulfilled") {
-            const getValue: any = result.value.data;
+        setPokemonList([]);
 
-            setPokemonList((prevState) => [...prevState, getValue]);
-          }
-        })
-      )
+        Promise.allSettled(getUrl)
+          .then((responses) =>
+            responses.forEach((result) => {
+              if (result.status === "fulfilled") {
+                const getValue: any = result.value.data;
+
+                setPokemonList((prevState) => [...prevState, getValue]);
+              }
+
+              setPokeLoading(false);
+            })
+          )
+          .catch((err) => {
+            console.error(`CATCH ERROR ${err}`);
+          });
+      })
       .catch((err) => {
         console.error(`CATCH ERROR ${err}`);
       });
+  }
+
+  function NextURL() {
+    GetURL(pokemonAPI.next);
+  }
+
+  function PreviousURL() {
+    GetURL(pokemonAPI.previous);
   }
 
   return (
@@ -71,44 +88,42 @@ export default function Home({ pokeList }: HomeProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="container mx-auto items-center flex flex-col gap-8 h-full md:justify-center pb-8 overflow-y-scroll md:overflow-y-auto">
-        <div className="grid grid-cols-2 md:grid-cols-5 md:grid-rows-2 gap-4 mt-4 md:mt-0">
-          {pokemonList.map((item) => {
-            return (
-              <button
-                key={item.id}
-                className="flex flex-col items-center bg-gray-700 p-4 rounded-lg hover:bg-gray-600 transition relative"
-              >
-                <div className="flex items-center gap-1">
-                  <span className="text-2xl">
-                    <MdCatchingPokemon />
-                  </span>
-
-                  <h1>{item.name.toUpperCase()}</h1>
-                </div>
-
-                <img src={item.sprites.front_default} alt="pokemon sprite" />
-
-                <div className="flex gap-2">
-                  {item.types.map((item) => (
-                    <span key={item.type.name} className="bg-purple-500 px-2 rounded-md">
-                      {item.type.name.toUpperCase()}
-                    </span>
-                  ))}
-                </div>
-
-                <span className="absolute top-0 right-2">{item.id}</span>
-              </button>
-            );
-          })}
-        </div>
+      <main className="container mx-auto items-center flex flex-col gap-8 h-full md:justify-center pb-8 overflow-y-scroll md:overflow-y-auto p-8 md:p-0">
+        {pokemonAPI && <h2>Total Pokemons: {pokemonAPI.count}</h2>}
+        {pokeLoading ? (
+          <div className="h-96 flex justify-center items-center">
+            <ReactLoading type="bubbles" color="#ffffff" />
+          </div>
+        ) : (
+          <div className="md:grid grid-cols-5 grid-rows-2 md:gap-4 mt-4 md:mt-0 w-60 md:w-auto flex flex-col gap-8 h-96">
+            {pokemonList.map((item) => {
+              return (
+                <PokeBox
+                  key={item.id}
+                  id={item.id}
+                  name={item.name.toUpperCase()}
+                  sprite={item.sprites.front_default}
+                  types={item.types}
+                />
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex gap-8 items-center">
-          <button disabled={pokeList.previous == null} className="bg-red-500 w-24 h-12 text-xl rounded-md hover:bg-red-800 transition disabled:bg-gray-700 disabled:cursor-not-allowed">
+          <button
+            disabled={pokemonAPI && pokemonAPI.previous === null}
+            className="bg-red-500 w-24 h-12 text-xl rounded-md hover:bg-red-800 transition disabled:bg-gray-700 disabled:cursor-not-allowed"
+            onClick={PreviousURL}
+          >
             PREVIOUS
           </button>
 
-          <button className="bg-green-500 w-24 h-12 text-xl rounded-md hover:bg-green-800 transition">
+          <button
+            disabled={pokemonAPI && pokemonAPI.next === null}
+            className="bg-green-500 w-24 h-12 text-xl rounded-md hover:bg-green-800 transition disabled:bg-gray-700 disabled:cursor-not-allowed"
+            onClick={NextURL}
+          >
             NEXT
           </button>
         </div>
@@ -116,16 +131,3 @@ export default function Home({ pokeList }: HomeProps) {
     </>
   );
 }
-
-export const getStaticProps: GetStaticProps = async () => {
-  const res = await fetch(
-    "https://pokeapi.co/api/v2/pokemon/?offset=0&limit=10"
-  );
-  const pokeList: PokeList = await res.json();
-
-  return {
-    props: {
-      pokeList,
-    },
-  };
-};
